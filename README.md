@@ -11,7 +11,6 @@ This repository contains the C++ artifact evaluating the **AFCMT** architecture 
 2. **`benchmarks/`**: Contains the reproducible evaluation scripts, isolated from the OpenFHE source tree with their own CMake configuration.
    - `levelA_B_bench.cpp`: Reproduces the Square CCMM isolated (Level A) and end-to-end (Level B) speedup tables.
    - `rect_bench.cpp`: Reproduces the Rectangular CCMM speedup (depth $B \in \{1, 2, 4, 8\}$) driven by $O(1)$ Deferred Pre-CMT accumulation.
-3. **`OPTIMIZATIONS.md`**: A detailed, line-by-line breakdown of the systems and microarchitectural bottlenecks (such as multi-core thread starvation and massive inner-loop heap allocations) that we mathematically and structurally resolved over the baseline CKL architecture.
 
 ---
 
