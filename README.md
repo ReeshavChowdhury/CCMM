@@ -1,65 +1,55 @@
-# Artifact: Automorphism-Fused Ciphertext Matrix Transpose (AFCMT)
+# Artifact: Fast Encrypted Matrix Multiplication (AFCMT)
 
-This repository contains the C++ artifact evaluating the **AFCMT** architecture and Rectangular **Pre-CMT Accumulation** for the CKKS scheme.
+This folder contains the code to run the experiments from our paper on making CKKS encrypted matrix multiplication (CCMM) faster.
 
-## Artifact Structure
+We modified the standard OpenFHE library to include our faster "AFCMT" method.
 
-1. **`openfhe-development/`**: The modified OpenFHE C++ cryptographic library. We integrated our AFCMT Transpose algorithm and memory layout optimizations natively into the core OpenFHE framework.
-   - **Modified Files**: 
-     - `src/pke/lib/scheme/ckksrns/ckksrns-cmt.cpp`
-     - `src/pke/include/scheme/ckksrns/ckksrns-cmt.h`
-2. **`benchmarks/`**: Contains the reproducible evaluation scripts, isolated from the OpenFHE source tree with their own CMake configuration.
-   - `levelA_B_bench.cpp`: Reproduces the Square CCMM isolated (Level A) and end-to-end (Level B) speedup tables.
-   - `rect_bench.cpp`: Reproduces the Rectangular CCMM speedup (depth $B \in \{1, 2, 4, 8\}$) driven by $O(1)$ Deferred Pre-CMT accumulation.
+## Code Structure
+
+1. **`openfhe-development/`**: The modified OpenFHE library with our AFCMT code added inside.
+2. **`benchmarks/`**: The scripts to run the experiments and print the results shown in the paper's tables.
+   - `precision_test.cpp`: Checks that our method gets the exact same answers as the original method.
+   - `levelA_B_bench.cpp`: Measures the speed of the isolated transpose step and the full matrix multiplication.
+   - `rect_bench.cpp`: Measures the speed when multiplying rectangular matrices using our "Deferred Accumulation" trick.
 
 ---
 
-## 1. Compilation Instructions
+## 1. How to Compile
 
-We provide an automated script to cleanly build and install OpenFHE to a local directory (`install/`), and then automatically configure and build the external benchmarks against it.
+Run the automated script to build OpenFHE and compile the benchmarks:
 
 ```bash
 # Run the automated build script
 ./build.sh
 ```
 
-Alternatively, to compile manually:
-```bash
-# 1. Compile and install OpenFHE locally
-cd openfhe-development
-mkdir build && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../../install -DWITH_OPENMP=ON -DBUILD_EXAMPLES=OFF
-make -j$(nproc) install
-cd ../..
-
-# 2. Compile the Benchmarks
-cd benchmarks
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
-
 ---
 
-## 2. Evaluation & Testing
+## 2. How to Run the Experiments
 
-Once compiled, you can directly execute the benchmark binaries from the `benchmarks/build/` directory. Be sure to point your library path to the local install directory so it uses the modified OpenFHE library and not a system-installed version.
+After compiling, you can run the programs in the `benchmarks/build/` folder. First, set your library path so the system uses our modified OpenFHE:
 
 ```bash
 export LD_LIBRARY_PATH=$PWD/install/lib:$LD_LIBRARY_PATH
 export OMP_NUM_THREADS=20
 ```
 
-### Run Level A and Level B Benchmarks (Square CCMM)
-This benchmark mathematically locks the polynomial multiplication kernel (`FusedPPMM4`) across all evaluated variants to ensure the $1.25\times-2.7\times$ speedup represents the true, isolated performance gain generated strictly by the AFCMT transpose module.
+### Reproduce Table 4: Pointwise Verification
+This runs the precision test to prove that our fast method produces the exact same numbers as the original method with 0.00 difference.
+```bash
+./benchmarks/build/precision_test
+```
 
+### Reproduce Table 1 (Isolated CMT) and Table 2 (End-to-End CCMM)
+This runs the main speed comparisons for square matrices.
+- **Table 1** (Isolated CMT Benchmark): Compares the speed of just the transpose step.
+- **Table 2** (End-to-End CCMM Benchmark): Compares the total time of the full encrypted matrix multiplication.
 ```bash
 ./benchmarks/build/levelA_B_bench
 ```
 
-### Run Rectangular CCMM Benchmark (Pre-CMT Accumulation)
-This validates the Deferred Transpose theorem for rectangular CCMM of depth $B$. It strictly compares the Standard approach ($3B$ transposes) against our Deferred Pre-CMT approach ($B+2$ transposes).
-
+### Reproduce Table 5 (Pre-CMT Accumulation)
+This runs the benchmark for rectangular matrices (where depth B is 1, 2, 4, or 8). It compares the standard approach to our new "Deferred" approach.
 ```bash
 ./benchmarks/build/rect_bench
 ```
